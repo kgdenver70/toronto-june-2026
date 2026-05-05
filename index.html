@@ -575,6 +575,90 @@
     font-style: normal;
   }
 
+  /* ───── EDITABLE ───── */
+  [contenteditable="true"] {
+    outline: none;
+    border-radius: 3px;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    cursor: text;
+    position: relative;
+  }
+  [contenteditable="true"]:hover {
+    background: rgba(212, 166, 87, 0.06);
+    box-shadow: 0 0 0 4px rgba(212, 166, 87, 0.06);
+  }
+  [contenteditable="true"]:focus {
+    background: rgba(212, 166, 87, 0.10);
+    box-shadow: 0 0 0 4px rgba(212, 166, 87, 0.10);
+  }
+  [contenteditable="true"][data-edited="true"]::after {
+    content: '·';
+    position: absolute;
+    top: 0;
+    right: -10px;
+    color: var(--brass);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .save-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--brass);
+    color: var(--bg);
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .save-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .reset-edits {
+    margin-top: 24px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 22px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .reset-edits:hover {
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+
+  .edit-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-top: 18px;
+    padding: 10px 16px;
+    background: rgba(212, 166, 87, 0.05);
+    border: 1px solid rgba(212, 166, 87, 0.2);
+    border-radius: 8px;
+    display: inline-block;
+  }
+
   /* ───── RESPONSIVE ───── */
   @media (max-width: 760px) {
     .container { padding: 0 18px; }
@@ -612,6 +696,8 @@
     <div class="eyebrow">06.06 — 06.13 · 2026 · Trip Dossier</div>
     <h1 class="title">Toronto<br>&amp; <em>Hamilton</em></h1>
     <p class="subtitle">Eight days. Two cities. Katie the whole way through, Feiz from Tuesday on. A drive to Bowmanville to see Mom, a Villanelle show at The Garrison, and Dunk's birthday in Hamilton. Built for execution.</p>
+
+    <div class="edit-hint">✎ &nbsp;Tap any text to edit · saves to this device</div>
 
     <div class="stats">
       <div class="stat">
@@ -1204,6 +1290,10 @@
         <div class="todo-text">Confirm pickup vs Uber for Feiz at YYZ Tue 4 PM</div>
       </div>
     </div>
+
+    <div style="text-align:center;">
+      <button class="reset-edits" onclick="resetAllEdits()">↺ &nbsp;Reset all edits on this device</button>
+    </div>
   </section>
 
   <footer>
@@ -1212,8 +1302,144 @@
 
 </div>
 
+<div class="save-toast" id="saveToast">Saved</div>
+
 <script>
-  // Countdown to trip
+  const STORAGE_KEY = 'toronto-2026-trip';
+
+  // ─── Storage helpers ──────────────────────────────
+  function loadStore() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch(e) {
+      return {};
+    }
+  }
+  function saveStore(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showToast();
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('saveToast');
+    if (!t) return;
+    t.textContent = msg || 'Saved';
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+
+  // ─── Make stuff editable ──────────────────────────
+  // Selectors of elements that should be editable, with stable id prefixes.
+  const EDITABLE_SELECTORS = [
+    { sel: '.item-time',   prefix: 'time' },
+    { sel: '.item-title',  prefix: 'title' },
+    { sel: '.item-detail', prefix: 'detail' },
+    { sel: '.pick-name',   prefix: 'pname' },
+    { sel: '.pick-meta',   prefix: 'pmeta' },
+    { sel: '.pick-rating', prefix: 'prate' },
+    { sel: '.note',        prefix: 'note' },
+    { sel: '.todo-text',   prefix: 'todo' },
+  ];
+
+  function initEditable() {
+    const store = loadStore();
+    const edits = store.edits || {};
+
+    EDITABLE_SELECTORS.forEach(({sel, prefix}) => {
+      document.querySelectorAll(sel).forEach((el, i) => {
+        const id = prefix + '-' + i;
+        el.dataset.editId = id;
+        el.setAttribute('contenteditable', 'true');
+        el.setAttribute('spellcheck', 'true');
+
+        // Restore saved edit
+        if (edits[id] !== undefined) {
+          el.innerHTML = edits[id];
+          el.dataset.edited = 'true';
+        }
+
+        // Save on blur
+        el.addEventListener('blur', () => {
+          const store = loadStore();
+          store.edits = store.edits || {};
+          store.edits[id] = el.innerHTML;
+          el.dataset.edited = 'true';
+          saveStore(store);
+        });
+
+        // Cmd/Ctrl+Enter to blur (commit)
+        el.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            el.blur();
+          }
+          // Prevent click-to-toggle on day-head when editing inside a day
+          e.stopPropagation();
+        });
+
+        // Stop click propagation so editing doesn't toggle parent day
+        el.addEventListener('click', (e) => e.stopPropagation());
+      });
+    });
+  }
+
+  // ─── Checklist persistence ────────────────────────
+  function initChecklist() {
+    const store = loadStore();
+    const todos = store.todos || {};
+
+    document.querySelectorAll('.todo-item').forEach((el, i) => {
+      const id = 'check-' + i;
+      el.dataset.todoId = id;
+
+      // Restore state
+      if (todos[id]) el.classList.add('done');
+
+      // Replace inline onclick so we control save behavior
+      el.onclick = (e) => {
+        // Don't toggle if user clicked into the editable text
+        if (e.target.classList.contains('todo-text') ||
+            e.target.closest('[contenteditable="true"]')) return;
+        el.classList.toggle('done');
+        const store = loadStore();
+        store.todos = store.todos || {};
+        store.todos[id] = el.classList.contains('done');
+        saveStore(store);
+      };
+    });
+  }
+
+  // ─── Day open/close persistence ───────────────────
+  function initDays() {
+    const store = loadStore();
+    const opened = store.daysOpen || {};
+
+    document.querySelectorAll('.day').forEach(day => {
+      const date = day.dataset.date;
+      if (opened[date]) day.classList.add('open');
+    });
+  }
+
+  // Override toggleDay so it persists
+  function toggleDay(headEl) {
+    const day = headEl.parentElement;
+    day.classList.toggle('open');
+    const store = loadStore();
+    store.daysOpen = store.daysOpen || {};
+    store.daysOpen[day.dataset.date] = day.classList.contains('open');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  }
+
+  // ─── Reset ────────────────────────────────────────
+  function resetAllEdits() {
+    if (!confirm('Reset all your edits, checked items, and notes on this device? The original itinerary will reload.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+
+  // ─── Countdown ────────────────────────────────────
   function updateCountdown() {
     const tripStart = new Date('2026-06-06T00:00:00');
     const today = new Date();
@@ -1231,25 +1457,23 @@
       el.innerHTML = '<em>Done</em>';
     }
   }
-  updateCountdown();
 
-  // Day toggle
-  function toggleDay(headEl) {
-    const day = headEl.parentElement;
-    day.classList.toggle('open');
-  }
-
-  // Highlight current day during trip
+  // ─── Auto-jump to current day during trip ─────────
   function highlightCurrentDay() {
     const today = new Date().toISOString().slice(0,10);
     document.querySelectorAll('.day').forEach(d => {
       if (d.dataset.date === today) {
         d.classList.add('open');
-        d.style.borderColor = 'var(--brass)';
-        d.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(() => d.scrollIntoView({behavior:'smooth', block:'center'}), 300);
       }
     });
   }
+
+  // ─── Boot ─────────────────────────────────────────
+  initEditable();
+  initChecklist();
+  initDays();
+  updateCountdown();
   highlightCurrentDay();
 </script>
 
