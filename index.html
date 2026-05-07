@@ -575,6 +575,75 @@
     font-style: normal;
   }
 
+  /* ───── DAY ASIDE (Dining + Notes) ───── */
+  .day-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+  .aside-block {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .aside-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .aside-content {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.65;
+    min-height: 56px;
+    outline: none;
+    padding: 4px 0;
+    cursor: text;
+  }
+  .aside-content:empty::before {
+    content: attr(data-placeholder);
+    color: var(--dim);
+    font-style: italic;
+    font-size: 12.5px;
+    pointer-events: none;
+  }
+  .aside-content a {
+    color: var(--brass);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--brass);
+    word-break: break-word;
+  }
+  .aside-content a:hover { color: var(--brass-hi); }
+  .add-link-btn {
+    background: transparent;
+    border: 1px solid var(--line-hi);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .add-link-btn:hover {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
   /* ───── EDITABLE ───── */
   [contenteditable="true"] {
     outline: none;
@@ -683,6 +752,7 @@
     .todo { grid-template-columns: 1fr; }
     .pick { grid-template-columns: 1fr; }
     .pick-rating { justify-self: start; }
+    .day-aside { grid-template-columns: 1fr; }
     section { padding: 50px 0 20px; }
   }
 </style>
@@ -848,36 +918,21 @@
               <div class="item-time">7:30 PM</div>
               <div class="item-body">
                 <div class="item-title">Dinner — first night in town</div>
-                <div class="item-detail">Walking-distance options below. After a full travel day, lean toward something within a few blocks of the hotel.</div>
-
-                <div class="picks">
-                  <div class="picks-label">Picks · Walking from Four Seasons</div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Trattoria Nervosa <em>Italian</em></div>
-                      <div class="pick-meta">75 Yorkville Ave · 2 min walk · vegetarian-friendly</div>
-                    </div>
-                    <div class="pick-rating">★ 4.3 · $$</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Alobar Yorkville <em>French steakhouse · Michelin</em></div>
-                      <div class="pick-meta">162 Cumberland St · 4 min walk · book ahead</div>
-                    </div>
-                    <div class="pick-rating">★ 4.3 · $$$</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Mar'aa Yorkville <em>51st floor · views</em></div>
-                      <div class="pick-meta">55 Bloor St W · CN Tower views · special-occasion play</div>
-                    </div>
-                    <div class="pick-rating">★ 4.5 · $$$</div>
-                  </div>
-                </div>
+                <div class="item-detail">After a full travel day, lean toward something within a few blocks of the hotel. Fill in below ↓</div>
               </div>
             </div>
           </div>
           <div class="note">Time-zone note: you lose 2 hours coming east. Local 7:30 PM dinner = 5:30 PM body clock. Easy.</div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
+            </div>
+          </div>
         </div></div>
       </div>
 
@@ -900,7 +955,7 @@
               <div class="item-time">10:00 AM</div>
               <div class="item-body">
                 <div class="item-title">Yorkville brunch</div>
-                <div class="item-detail">Hit Café Boulud (in the Four Seasons) or walk to L'Avenue at The Well — Sunday line is real, plan for ~45 min wait or get there early.</div>
+                <div class="item-detail">Pick a spot in the neighborhood — fill in below.</div>
               </div>
             </div>
             <div class="item">
@@ -914,8 +969,18 @@
               <div class="item-time">7:00 PM</div>
               <div class="item-body">
                 <div class="item-title">Dinner with Tris</div>
-                <div class="item-detail">Pick is Tris's call — ask if there's a spot. If you're picking, neutral options near the hotel work, or pull Tris west toward Ossington/Dundas West for more energy.</div>
+                <div class="item-detail">Pick is Tris's call — confirm spot and add below ↓</div>
               </div>
+            </div>
+          </div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
           </div>
         </div></div>
@@ -928,7 +993,7 @@
           <div class="day-info">
             <div class="day-weekday">Day 03 · Bowmanville run</div>
             <div class="day-title">Pick up the rental, drive east to see Mom</div>
-            <div class="day-summary">~70 km · ~1 hr 15 min each way · day trip back to Toronto</div>
+            <div class="day-summary">National Car · 9 AM pickup → 6 PM drop · ~140 km round trip</div>
           </div>
           <div class="day-toggle">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v12M1 7h12" stroke-linecap="round"/></svg>
@@ -939,40 +1004,57 @@
             <div class="item">
               <div class="item-time">9:00 AM</div>
               <div class="item-body">
-                <div class="item-title">Pick up rental car</div>
-                <div class="item-detail">Closest options to the Four Seasons: Hertz at 130 Bloor St W or Enterprise at 49 Yonge St. Car needs to last through Wed — you'll drive to Hamilton on the 10th and probably keep it until Kursat's.</div>
+                <div class="item-title">Pick up rental — National Car Rental</div>
+                <div class="item-detail">2 Bloor St E, Unit C60, Toronto. Hudson's Bay Centre garage — literally 4 min walk from the Four Seasons. Coffee on the way.</div>
               </div>
             </div>
             <div class="item">
-              <div class="item-time">10:30 AM</div>
+              <div class="item-time">9:30 AM</div>
               <div class="item-body">
                 <div class="item-title">Drive to Bowmanville</div>
-                <div class="item-detail">~70 km via the 401 east. Plan for traffic — Toronto's 401 is its own personality. Coffee stop on the way if needed.</div>
+                <div class="item-detail">~70 km via the 401 east. Plan ~1:15 with Toronto traffic.</div>
               </div>
             </div>
             <div class="item">
-              <div class="item-time">12:00 PM</div>
+              <div class="item-time">11:00 AM</div>
               <div class="item-body">
                 <div class="item-title">Time with Mom</div>
-                <div class="item-detail">Lunch with her, hang for the afternoon.</div>
+                <div class="item-detail">Lunch with her, hang for the afternoon. ~4 hours together before you need to head back.</div>
               </div>
             </div>
             <div class="item">
-              <div class="item-time">5:00 PM</div>
+              <div class="item-time">4:00 PM</div>
               <div class="item-body">
                 <div class="item-title">Drive back to Toronto</div>
-                <div class="item-detail">Beat the worst of rush by leaving by 5 or after 7 — anything between is a slog. Park at the Four Seasons or nearby ($$ either way).</div>
+                <div class="item-detail">Leaving at 4 puts you in 401 westbound rush — ~1:30 with traffic. Build in cushion.</div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="item-time">5:45 PM</div>
+              <div class="item-body">
+                <div class="item-title">Drop the rental — 6 PM hard deadline</div>
+                <div class="item-detail">Same location, 2 Bloor St E. Walk back to the Four Seasons (4 min).</div>
               </div>
             </div>
             <div class="item">
               <div class="item-time">7:30 PM</div>
               <div class="item-body">
                 <div class="item-title">Dinner — easy night</div>
-                <div class="item-detail">After a 140 km round-trip you'll want low effort. Trattoria Nervosa is a 2-min walk and won't ask anything of you.</div>
+                <div class="item-detail">After 140 km on the road you'll want low effort. Add below ↓</div>
               </div>
             </div>
           </div>
-          <div class="note">M2 alternative: rent something with comparable get-up-and-go. Or book a midsize and accept it.</div>
+          <div class="note">No M2 today — this is a one-day rental. From here on, transport is Uber, GO Transit, or whatever Kursat lines up.</div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
+            </div>
+          </div>
         </div></div>
       </div>
 
@@ -1009,32 +1091,7 @@
               <div class="item-time">5:30 PM</div>
               <div class="item-body">
                 <div class="item-title">Pre-show dinner — head west</div>
-                <div class="item-detail">The Garrison is at 1197 Dundas West. Eat in that neighborhood so you can walk to the venue.</div>
-
-                <div class="picks">
-                  <div class="picks-label">Picks · Dundas West, near The Garrison</div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Antler Kitchen &amp; Bar <em>game-forward · acclaimed</em></div>
-                      <div class="pick-meta">1454 Dundas W · 5 min walk to venue · book early</div>
-                    </div>
-                    <div class="pick-rating">★ 4.8 · $$$</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Milou <em>French bistro · Parisian feel</em></div>
-                      <div class="pick-meta">1375 Dundas W · 4 min walk · steak frites is the move</div>
-                    </div>
-                    <div class="pick-rating">★ 4.3 · $$</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Carolina <em>Italian · wood-fired</em></div>
-                      <div class="pick-meta">772 Dundas W · 12 min walk · easier reservation</div>
-                    </div>
-                    <div class="pick-rating">★ 4.4 · $$</div>
-                  </div>
-                </div>
+                <div class="item-detail">The Garrison is at 1197 Dundas West. Eat in that neighborhood so you can walk to the venue. Uber over from Yorkville (~15 min). Add spot below ↓</div>
               </div>
             </div>
             <div class="item">
@@ -1043,6 +1100,16 @@
                 <div class="item-title">Villanelle · The Garrison</div>
                 <div class="item-detail">1197 Dundas St W. Doors 7 PM. Standing-room indie venue, intimate. Tickets via Ticketmaster / The Garrison.</div>
               </div>
+            </div>
+          </div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
           </div>
         </div></div>
@@ -1054,8 +1121,8 @@
           <div class="day-num"><span class="num">10</span><span class="month">Wed · Jun</span></div>
           <div class="day-info">
             <div class="day-weekday">Day 05 · To Hamilton</div>
-            <div class="day-title">Check out, drive to Hamilton, Dunk + Feiz's birthday</div>
-            <div class="day-summary">Four Seasons checkout 12 PM · ~70 km west · birthday dinner</div>
+            <div class="day-title">Check out, get to Hamilton, Dunk + Feiz's birthday</div>
+            <div class="day-summary">Four Seasons checkout 12 PM · Homewood Suites Hamilton check-in 3 PM</div>
           </div>
           <div class="day-toggle">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v12M1 7h12" stroke-linecap="round"/></svg>
@@ -1067,46 +1134,21 @@
               <div class="item-time">12:00 PM</div>
               <div class="item-body">
                 <div class="item-title">Check out of Four Seasons</div>
-                <div class="item-detail">Pack up, settle the bill, load the car.</div>
+                <div class="item-detail">Pack up, settle the bill.</div>
               </div>
             </div>
             <div class="item">
               <div class="item-time">1:00 PM</div>
               <div class="item-body">
-                <div class="item-title">Drive to Hamilton</div>
-                <div class="item-detail">~70 km via the QEW west. Roughly an hour without traffic. Lunch on the way at a roadside spot, or once you arrive.</div>
+                <div class="item-title">Toronto → Hamilton · transport TBD</div>
+                <div class="item-detail">No car for this leg. Three options: <strong>GO Transit</strong> (Lakeshore West from Union → West Harbour GO, ~$15 CAD, ~1 hr, then 5 min Uber to hotel) is the clean play. <strong>Uber direct</strong> ~$120-150, ~1 hr. <strong>Re-rent a car</strong> if you want flexibility in Hamilton.</div>
               </div>
             </div>
             <div class="item">
               <div class="item-time">3:00 PM</div>
               <div class="item-body">
-                <div class="item-title">Hotel check-in — to be booked</div>
-                <div class="item-detail">Top picks below. The Laundry Rooms is the standout — apartment-style suites in the core, restaurant on site.</div>
-
-                <div class="picks">
-                  <div class="picks-label">Hotels · Hamilton — pick one and lock it</div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">The Laundry Rooms <em>top pick · suite-style</em></div>
-                      <div class="pick-meta">18 Augusta St · downtown · Plank restobar on site</div>
-                    </div>
-                    <div class="pick-rating">★ 4.8</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">The Barracks Inn <em>historic · refined</em></div>
-                      <div class="pick-meta">425 Wilson St E, Ancaster · 15 min from downtown · romantic</div>
-                    </div>
-                    <div class="pick-rating">★ 4.8</div>
-                  </div>
-                  <div class="pick">
-                    <div>
-                      <div class="pick-name">Sheraton Hamilton <em>standard · central</em></div>
-                      <div class="pick-meta">116 King St W · default reliable · points</div>
-                    </div>
-                    <div class="pick-rating">★ 4.0</div>
-                  </div>
-                </div>
+                <div class="item-title">Check in — Homewood Suites by Hilton Hamilton</div>
+                <div class="item-detail">40 Bay Street South, Hamilton ON L8P 0B3. Downtown core, walkable to James St North.</div>
               </div>
             </div>
             <div class="item">
@@ -1120,11 +1162,21 @@
               <div class="item-time">7:30 PM</div>
               <div class="item-body">
                 <div class="item-title">Feiz's birthday dinner</div>
-                <div class="item-detail">Hamilton has a real food scene now — James Street North is the place to be. Born &amp; Raised, Berkeley North, or The French are all strong birthday plays. Make a reservation.</div>
+                <div class="item-detail">James Street North is the food strip in Hamilton. Pick a spot, book ahead, add it below ↓</div>
               </div>
             </div>
           </div>
           <div class="note">Birthday-boy energy: order the wine, get the cake out, make Feiz briefly uncomfortable in front of the room. Standard.</div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
+            </div>
+          </div>
         </div></div>
       </div>
 
@@ -1144,18 +1196,42 @@
         <div class="day-body"><div class="day-body-inner">
           <div class="schedule">
             <div class="item">
-              <div class="item-time">11:00 AM</div>
+              <div class="item-time">12:00 PM</div>
               <div class="item-body">
-                <div class="item-title">Hotel check-out · head to Kursat's</div>
-                <div class="item-detail">Coordinate timing with Kursat. Bring something — wine, a gift, dessert. Don't show up empty-handed when someone's hosting four nights in a row across two days.</div>
+                <div class="item-title">Check out of Homewood Suites</div>
+                <div class="item-detail">40 Bay Street South. Pack up.</div>
               </div>
             </div>
             <div class="item">
-              <div class="item-time">Day</div>
+              <div class="item-time">12:30 PM</div>
+              <div class="item-body">
+                <div class="item-title">Hamilton → Kursat's · transport TBD</div>
+                <div class="item-detail">Coordinate with Kursat — does he pick up, or are you Ubering / driving over? Pin this before checkout.</div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="item-time">Afternoon</div>
+              <div class="item-body">
+                <div class="item-title">Settle in at Kursat's</div>
+                <div class="item-detail">Bring something — wine, a gift, dessert. Don't show up empty-handed when someone's hosting two nights.</div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="item-time">Evening</div>
               <div class="item-body">
                 <div class="item-title">Open · whatever Kursat has lined up</div>
                 <div class="item-detail">Could be home time, neighborhood walk, a meal in. Roll with whatever's on offer.</div>
               </div>
+            </div>
+          </div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
           </div>
         </div></div>
@@ -1192,6 +1268,16 @@
             </div>
           </div>
           <div class="note">Mobile boarding pass tonight. Save the URL of this dossier offline if you want flight info handy.</div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
+            </div>
+          </div>
         </div></div>
       </div>
 
@@ -1214,14 +1300,14 @@
               <div class="item-time">7:00 AM</div>
               <div class="item-body">
                 <div class="item-title">Up · coffee · hugs</div>
-                <div class="item-detail">Goodbyes to Kursat and Feiz. Confirm rental drop-off plan.</div>
+                <div class="item-detail">Goodbyes to Kursat and Feiz.</div>
               </div>
             </div>
             <div class="item">
               <div class="item-time">8:00 AM</div>
               <div class="item-body">
-                <div class="item-title">Drive to YYZ · drop the rental</div>
-                <div class="item-detail">Build in buffer for traffic and rental return logistics. ~1 hr from most points around Hamilton/west of Toronto, but Saturday morning is usually clean.</div>
+                <div class="item-title">Get to YYZ · transport TBD</div>
+                <div class="item-detail">Kursat dropping off? Uber? Confirm the night before. From most points west of Toronto, plan ~1 hr but Saturday morning is usually clean.</div>
               </div>
             </div>
             <div class="item">
@@ -1239,6 +1325,16 @@
               </div>
             </div>
           </div>
+          <div class="day-aside">
+            <div class="aside-block">
+              <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
+            </div>
+          </div>
         </div></div>
       </div>
 
@@ -1253,21 +1349,23 @@
     <div class="todo">
       <div class="todo-item" onclick="this.classList.toggle('done')">
         <div class="todo-check"></div>
-        <div class="todo-text">Hamilton hotel · Wed Jun 10 night
-          <span class="todo-priority">Highest priority</span>
-        </div>
-      </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
-        <div class="todo-check"></div>
-        <div class="todo-text">Rental car · pickup Mon Jun 8 · drop YYZ Sat Jun 13
-          <span class="todo-priority">High priority</span>
-        </div>
-      </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
-        <div class="todo-check"></div>
         <div class="todo-text">Villanelle tickets · Tue Jun 9 · The Garrison
           <span class="todo-priority">High priority</span>
         </div>
+      </div>
+      <div class="todo-item" onclick="this.classList.toggle('done')">
+        <div class="todo-check"></div>
+        <div class="todo-text">Toronto → Hamilton transport · Wed Jun 10 (GO Transit, Uber, or rebook a car)
+          <span class="todo-priority">High priority</span>
+        </div>
+      </div>
+      <div class="todo-item" onclick="this.classList.toggle('done')">
+        <div class="todo-check"></div>
+        <div class="todo-text">Hamilton → Kursat's transport · Thu Jun 11 (coordinate with Kursat)</div>
+      </div>
+      <div class="todo-item" onclick="this.classList.toggle('done')">
+        <div class="todo-check"></div>
+        <div class="todo-text">Kursat's → YYZ transport · Sat Jun 13 (Kursat or Uber)</div>
       </div>
       <div class="todo-item" onclick="this.classList.toggle('done')">
         <div class="todo-check"></div>
@@ -1333,15 +1431,79 @@
   // ─── Make stuff editable ──────────────────────────
   // Selectors of elements that should be editable, with stable id prefixes.
   const EDITABLE_SELECTORS = [
-    { sel: '.item-time',   prefix: 'time' },
-    { sel: '.item-title',  prefix: 'title' },
-    { sel: '.item-detail', prefix: 'detail' },
-    { sel: '.pick-name',   prefix: 'pname' },
-    { sel: '.pick-meta',   prefix: 'pmeta' },
-    { sel: '.pick-rating', prefix: 'prate' },
-    { sel: '.note',        prefix: 'note' },
-    { sel: '.todo-text',   prefix: 'todo' },
+    { sel: '.item-time',    prefix: 'time' },
+    { sel: '.item-title',   prefix: 'title' },
+    { sel: '.item-detail',  prefix: 'detail' },
+    { sel: '.note',         prefix: 'note' },
+    { sel: '.todo-text',    prefix: 'todo' },
+    { sel: '.aside-content', prefix: 'aside' },
   ];
+
+  // ─── URL auto-linkify ─────────────────────────────
+  function linkifyUrls(el) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    const textNodes = [];
+    let n;
+    while (n = walker.nextNode()) {
+      // Skip if already inside an anchor
+      if (n.parentElement && n.parentElement.closest('a')) continue;
+      if (/(https?:\/\/|www\.)\S+/i.test(n.textContent)) {
+        textNodes.push(n);
+      }
+    }
+    textNodes.forEach(textNode => {
+      const text = textNode.textContent;
+      const parts = text.split(/((?:https?:\/\/|www\.)[^\s<]+)/i);
+      if (parts.length === 1) return;
+      const frag = document.createDocumentFragment();
+      parts.forEach(part => {
+        if (/^(https?:\/\/|www\.)/i.test(part)) {
+          const a = document.createElement('a');
+          a.href = part.startsWith('http') ? part : 'https://' + part;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = part;
+          frag.appendChild(a);
+        } else if (part) {
+          frag.appendChild(document.createTextNode(part));
+        }
+      });
+      textNode.replaceWith(frag);
+    });
+  }
+
+  // ─── Add link button handler ──────────────────────
+  function addLinkTo(btn) {
+    const block = btn.closest('.aside-block');
+    const content = block.querySelector('.aside-content');
+    const url = prompt('Paste the URL');
+    if (!url) return;
+    const label = prompt('Link text (what to show)', url) || url;
+
+    const a = document.createElement('a');
+    a.href = url.startsWith('http') ? url : 'https://' + url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = label;
+
+    content.focus();
+    // If there's content already, add a leading separator
+    if (content.textContent.trim().length > 0) {
+      content.appendChild(document.createTextNode(' · '));
+    }
+    content.appendChild(a);
+    content.appendChild(document.createTextNode(' '));
+
+    // Trigger save
+    const id = content.dataset.editId;
+    if (id) {
+      const store = loadStore();
+      store.edits = store.edits || {};
+      store.edits[id] = content.innerHTML;
+      content.dataset.edited = 'true';
+      saveStore(store);
+    }
+  }
 
   function initEditable() {
     const store = loadStore();
@@ -1362,6 +1524,10 @@
 
         // Save on blur
         el.addEventListener('blur', () => {
+          // Auto-linkify URLs in aside content
+          if (el.classList.contains('aside-content')) {
+            linkifyUrls(el);
+          }
           const store = loadStore();
           store.edits = store.edits || {};
           store.edits[id] = el.innerHTML;
