@@ -1973,9 +1973,13 @@
         el.addEventListener('input', () => {
           saveScope(el);
         });
-        // Blur as a secondary save trigger (also linkifies URLs in asides)
+        // Blur as a secondary save trigger (also linkifies URLs in asides
+        // and re-sorts the schedule when a time is changed)
         el.addEventListener('blur', () => {
           if (el.classList.contains('aside-content')) linkifyUrls(el);
+          if (el.classList.contains('item-time')) {
+            sortScheduleByTime(el.closest('.schedule'));
+          }
           saveScope(el);
         });
         el.addEventListener('keydown', (e) => {
@@ -2107,7 +2111,53 @@
     sel.addRange(range);
   }
 
-  function linkifyUrls(el) {
+  // ─── Time parsing & schedule sorting ──────────────
+  // Converts time strings to minutes from midnight, so items can be sorted.
+  // Handles "9:00 AM", "3:14 PM", "Morning", "Afternoon", "Evening", "All day",
+  // 24-hour times, and falls back to Infinity (sorts to bottom) for unknowns.
+  function parseTime(str) {
+    if (!str) return Infinity;
+    const s = String(str).toLowerCase().trim();
+    if (!s || s === '—' || s === '-' || s === '–') return Infinity;
+    if (/all\s*day/.test(s)) return -1;          // pin to very top
+    if (/morning/.test(s))   return 6  * 60;     // 6:00
+    if (/noon|midday/.test(s)) return 12 * 60;   // 12:00
+    if (/afternoon/.test(s)) return 14 * 60;     // 14:00
+    if (/evening/.test(s))   return 18 * 60;     // 18:00
+    if (/night|late/.test(s)) return 22 * 60;    // 22:00
+    // Parse HH:MM AM/PM or H AM/PM or 24-hour HH:MM
+    const m = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2] || '0', 10);
+      const ampm = m[3];
+      if (ampm === 'pm' && h < 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
+      if (h >= 0 && h <= 23 && min >= 0 && min <= 59) return h * 60 + min;
+    }
+    return Infinity;
+  }
+
+  function sortScheduleByTime(scheduleEl) {
+    if (!scheduleEl) return;
+    const items = Array.from(scheduleEl.querySelectorAll(':scope > .item'));
+    if (items.length < 2) return;
+    const addBtn = scheduleEl.querySelector(':scope > .add-btn');
+    // Decorate with parsed times, stable sort
+    const decorated = items.map((item, i) => ({
+      item,
+      idx: i,
+      t: parseTime(item.querySelector('.item-time')?.textContent || '')
+    }));
+    decorated.sort((a, b) => (a.t - b.t) || (a.idx - b.idx));
+    // Re-attach in sorted order (insertBefore moves existing nodes)
+    decorated.forEach(({item}) => {
+      if (addBtn) scheduleEl.insertBefore(item, addBtn);
+      else scheduleEl.appendChild(item);
+    });
+  }
+
+
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
     const textNodes = [];
     let n;
