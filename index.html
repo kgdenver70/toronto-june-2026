@@ -1797,23 +1797,25 @@
   function debouncedSave(scope, getHTML, refPath) {
     if (applyingRemote) return;
     setSyncStatus('syncing', 'Saving');
-    pendingSaves++;
     if (saveTimers[scope]) clearTimeout(saveTimers[scope]);
     saveTimers[scope] = setTimeout(() => {
+      delete saveTimers[scope];
       const html = getHTML();
       lastWrittenHash[scope] = hashStr(html);
+      pendingSaves++;
       TRIP_ROOT.child(refPath).set(html)
         .then(() => {
           pendingSaves = Math.max(0, pendingSaves - 1);
-          if (pendingSaves === 0) setSyncStatus('synced', 'Live');
+          if (pendingSaves === 0 && Object.keys(saveTimers).length === 0) {
+            setSyncStatus('synced', 'Live');
+          }
         })
         .catch(err => {
           console.error('Firebase save failed:', err);
           pendingSaves = Math.max(0, pendingSaves - 1);
           setSyncStatus('offline', 'Save failed');
         });
-      delete saveTimers[scope];
-    }, 700);
+    }, 600);
   }
 
   function saveDay(dayEl) {
@@ -1956,6 +1958,12 @@
         if (!el.hasAttribute('contenteditable')) {
           el.setAttribute('contenteditable', 'true');
         }
+        // Primary save trigger: input event (fires on every keystroke)
+        // The 600ms debounce in debouncedSave handles the rapid-fire calls
+        el.addEventListener('input', () => {
+          saveScope(el);
+        });
+        // Blur as a secondary save trigger (also linkifies URLs in asides)
         el.addEventListener('blur', () => {
           if (el.classList.contains('aside-content')) linkifyUrls(el);
           saveScope(el);
