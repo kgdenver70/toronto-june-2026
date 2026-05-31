@@ -2158,6 +2158,7 @@
   }
 
 
+  function linkifyUrls(el) {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
     const textNodes = [];
     let n;
