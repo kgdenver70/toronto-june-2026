@@ -812,6 +812,63 @@
     flex-shrink: 0;
   }
 
+  /* ───── SYNC INDICATOR ───── */
+  .sync-indicator {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 16px 9px 13px;
+    background: rgba(34, 29, 24, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    cursor: default;
+    user-select: none;
+  }
+  .sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--sage);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+    color: var(--sage);
+  }
+  .sync-indicator.syncing { color: var(--brass); }
+  .sync-indicator.syncing .sync-dot {
+    background: var(--brass);
+    color: var(--brass);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+  .sync-indicator.offline { color: var(--rose); border-color: rgba(201, 122, 94, 0.3); }
+  .sync-indicator.offline .sync-dot { background: var(--rose); color: var(--rose); }
+  .sync-indicator.synced { color: var(--sage); }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.8); }
+  }
+  @media (max-width: 600px) {
+    .sync-indicator {
+      bottom: 14px;
+      right: 14px;
+      padding: 7px 12px 7px 10px;
+      font-size: 9px;
+    }
+    .sync-dot { width: 6px; height: 6px; }
+  }
+
   /* ───── EDITABLE ───── */
   [contenteditable="true"] {
     outline: none;
@@ -1687,52 +1744,94 @@
 
 <div class="save-toast" id="saveToast">Saved</div>
 
+<div class="sync-indicator syncing" id="syncIndicator">
+  <div class="sync-dot"></div>
+  <span id="syncStatus">Connecting</span>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
 <script>
-  const STORAGE_KEY = 'toronto-2026-trip-v3';
+  // ─── Firebase config ───────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbmaF6pL12bwKUD3tvXlGd2KHAcJr1hUQ",
+    authDomain: "toronto-2026.firebaseapp.com",
+    databaseURL: "https://toronto-2026-default-rtdb.firebaseio.com",
+    projectId: "toronto-2026",
+    storageBucket: "toronto-2026.firebasestorage.app",
+    messagingSenderId: "730506300030",
+    appId: "1:730506300030:web:f1b6ad87c01fc39a1d262f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const TRIP_ROOT = db.ref('trips/toronto-2026');
 
-  // ─── Storage ──────────────────────────────────────
-  function loadStore() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-    catch(e) { return {}; }
-  }
-  function saveStore(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    showToast();
+  // ─── Sync state ────────────────────────────────────
+  let applyingRemote = false;
+  let saveTimers = {};
+  let pendingRemoteUpdates = {};
+  let pendingSaves = 0;
+  const lastWrittenHash = {};
+
+  function hashStr(s) {
+    if (!s) return 0;
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return h;
   }
 
-  let toastTimer;
-  function showToast(msg) {
-    const t = document.getElementById('saveToast');
-    if (!t) return;
-    t.textContent = msg || 'Saved';
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
+  function setSyncStatus(state, msg) {
+    const ind = document.getElementById('syncIndicator');
+    const txt = document.getElementById('syncStatus');
+    if (!ind) return;
+    ind.classList.remove('syncing', 'offline', 'synced');
+    ind.classList.add(state);
+    if (txt && msg) txt.textContent = msg;
   }
 
-  // ─── Save scopes ──────────────────────────────────
+  // ─── Save: debounced writes to Firebase ───────────
+  function debouncedSave(scope, getHTML, refPath) {
+    if (applyingRemote) return;
+    setSyncStatus('syncing', 'Saving');
+    pendingSaves++;
+    if (saveTimers[scope]) clearTimeout(saveTimers[scope]);
+    saveTimers[scope] = setTimeout(() => {
+      const html = getHTML();
+      lastWrittenHash[scope] = hashStr(html);
+      TRIP_ROOT.child(refPath).set(html)
+        .then(() => {
+          pendingSaves = Math.max(0, pendingSaves - 1);
+          if (pendingSaves === 0) setSyncStatus('synced', 'Live');
+        })
+        .catch(err => {
+          console.error('Firebase save failed:', err);
+          pendingSaves = Math.max(0, pendingSaves - 1);
+          setSyncStatus('offline', 'Save failed');
+        });
+      delete saveTimers[scope];
+    }, 700);
+  }
+
   function saveDay(dayEl) {
+    if (!dayEl) return;
     const date = dayEl.dataset.date;
     const body = dayEl.querySelector('.day-body-inner');
     if (!body) return;
-    const store = loadStore();
-    store.dayBodies = store.dayBodies || {};
-    store.dayBodies[date] = body.innerHTML;
-    saveStore(store);
+    debouncedSave('day-' + date, () => body.innerHTML, 'dayBodies/' + date);
   }
   function saveTodoList() {
     const list = document.querySelector('.todo');
     if (!list) return;
-    const store = loadStore();
-    store.todoList = list.innerHTML;
-    saveStore(store);
+    debouncedSave('todoList', () => list.innerHTML, 'todoList');
   }
   function savePackingList() {
     const list = document.querySelector('.packing-list');
     if (!list) return;
-    const store = loadStore();
-    store.packingList = list.innerHTML;
-    saveStore(store);
+    debouncedSave('packingList', () => list.innerHTML, 'packingList');
   }
   function saveScope(el) {
     const day = el.closest('.day');
@@ -1741,78 +1840,106 @@
     if (el.closest('.packing-list')) return savePackingList();
   }
 
-  // ─── Restore content from storage ─────────────────
-  function restoreContent() {
-    const store = loadStore();
-    if (store.dayBodies) {
-      Object.keys(store.dayBodies).forEach(date => {
-        const day = document.querySelector('.day[data-date="' + date + '"]');
-        if (day) {
-          const body = day.querySelector('.day-body-inner');
-          if (body) body.innerHTML = store.dayBodies[date];
+  // ─── Apply remote updates (with focus protection) ─
+  function scopeIsFocused(scopeEl) {
+    const focused = document.activeElement;
+    return focused && scopeEl.contains(focused);
+  }
+
+  function applyRemoteDay(date, html) {
+    if (!html) return;
+    const day = document.querySelector('.day[data-date="' + date + '"]');
+    if (!day) return;
+    const body = day.querySelector('.day-body-inner');
+    if (!body) return;
+    if (lastWrittenHash['day-' + date] === hashStr(html)) return;
+    if (scopeIsFocused(body)) {
+      pendingRemoteUpdates['day-' + date] = { html, date };
+      return;
+    }
+    applyingRemote = true;
+    body.innerHTML = html;
+    lastWrittenHash['day-' + date] = hashStr(html);
+    injectScaffolding();
+    bindEditables(body);
+    applyingRemote = false;
+  }
+
+  function applyRemoteTodo(html) {
+    if (!html) return;
+    const list = document.querySelector('.todo');
+    if (!list) return;
+    if (lastWrittenHash['todoList'] === hashStr(html)) return;
+    if (scopeIsFocused(list)) {
+      pendingRemoteUpdates['todoList'] = { html };
+      return;
+    }
+    applyingRemote = true;
+    list.innerHTML = html;
+    lastWrittenHash['todoList'] = hashStr(html);
+    injectScaffolding();
+    bindEditables(list);
+    applyingRemote = false;
+  }
+
+  function applyRemotePacking(html) {
+    if (!html) return;
+    const list = document.querySelector('.packing-list');
+    if (!list) return;
+    if (lastWrittenHash['packingList'] === hashStr(html)) return;
+    if (scopeIsFocused(list)) {
+      pendingRemoteUpdates['packingList'] = { html };
+      return;
+    }
+    applyingRemote = true;
+    list.innerHTML = html;
+    lastWrittenHash['packingList'] = hashStr(html);
+    injectScaffolding();
+    bindEditables(list);
+    applyingRemote = false;
+  }
+
+  // Flush queued remote updates when focus leaves a scope
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      Object.keys(pendingRemoteUpdates).forEach(key => {
+        const focused = document.activeElement;
+        let scopeEl = null;
+        if (key.startsWith('day-')) {
+          const date = key.substring(4);
+          const day = document.querySelector('.day[data-date="' + date + '"]');
+          if (day) scopeEl = day.querySelector('.day-body-inner');
+        } else if (key === 'todoList') {
+          scopeEl = document.querySelector('.todo');
+        } else if (key === 'packingList') {
+          scopeEl = document.querySelector('.packing-list');
         }
+        if (!scopeEl) { delete pendingRemoteUpdates[key]; return; }
+        if (focused && scopeEl.contains(focused)) return;
+        const update = pendingRemoteUpdates[key];
+        delete pendingRemoteUpdates[key];
+        if (key.startsWith('day-')) applyRemoteDay(update.date, update.html);
+        else if (key === 'todoList') applyRemoteTodo(update.html);
+        else if (key === 'packingList') applyRemotePacking(update.html);
       });
-    }
-    if (store.todoList) {
-      const list = document.querySelector('.todo');
-      if (list) list.innerHTML = store.todoList;
-    }
-    if (store.packingList) {
-      const list = document.querySelector('.packing-list');
-      if (list) list.innerHTML = store.packingList;
-    }
-    if (store.daysOpen) {
-      Object.keys(store.daysOpen).forEach(date => {
-        const day = document.querySelector('.day[data-date="' + date + '"]');
-        if (day && store.daysOpen[date]) day.classList.add('open');
-      });
-    }
+    }, 150);
+  });
+
+  // ─── Day toggle (broadcast open/close) ────────────
+  function toggleDay(headEl) {
+    const day = headEl.parentElement;
+    day.classList.toggle('open');
+    if (applyingRemote) return;
+    TRIP_ROOT.child('daysOpen/' + day.dataset.date).set(day.classList.contains('open'));
   }
 
-  // ─── Scaffolding: inject item-style, delete btns, add btns ────
-  function injectScaffolding() {
-    // 1. Item-style field on every item-body
-    document.querySelectorAll('.item-body').forEach(body => {
-      if (!body.querySelector(':scope > .item-style')) {
-        const s = document.createElement('div');
-        s.className = 'item-style';
-        s.setAttribute('contenteditable', 'true');
-        s.setAttribute('data-placeholder', 'Style for the day...');
-        body.appendChild(s);
-      }
-    });
-
-    // 2. Delete buttons on items, notes, todo-items, packing-items
-    const deleteables = '.item, .note, .todo-item, .packing-item';
-    document.querySelectorAll(deleteables).forEach(el => {
-      if (el.querySelector(':scope > .delete-btn')) return;
-      el.insertAdjacentHTML('beforeend',
-        '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>');
-    });
-
-    // 3. Add-item buttons at end of each schedule
-    document.querySelectorAll('.schedule').forEach(sched => {
-      if (sched.querySelector(':scope > .add-btn')) return;
-      sched.insertAdjacentHTML('beforeend',
-        '<button class="add-btn" onclick="addScheduleItem(this)">+ Add item to day</button>');
-    });
-
-    // 4. Add-task button after todo list
-    const todoList = document.querySelector('.todo');
-    if (todoList && !todoList.parentElement.querySelector(':scope > .add-todo')) {
-      todoList.insertAdjacentHTML('afterend',
-        '<button class="add-btn add-todo" onclick="addTodoItem()">+ Add task</button>');
-    }
-
-    // 5. Add-packing button after packing list
-    const packingList = document.querySelector('.packing-list');
-    if (packingList && !packingList.parentElement.querySelector(':scope > .add-packing')) {
-      packingList.insertAdjacentHTML('afterend',
-        '<button class="add-btn add-packing" onclick="addPackingItem()">+ Add packing item</button>');
-    }
+  // ─── Reset (warns it nukes for everyone) ──────────
+  function resetAllEdits() {
+    if (!confirm("Reset EVERYTHING for ALL devices — yours, Katie's, anyone. This deletes all edits, deletions, checks, and notes everywhere. The original itinerary reloads on every device. This cannot be undone.\n\nProceed?")) return;
+    TRIP_ROOT.remove().then(() => location.reload());
   }
 
-  // ─── Bind editable handlers ───────────────────────
+  // ─── Editable, scaffold, delete, add ──────────────
   const EDITABLE_CLASSES = [
     'item-time', 'item-title', 'item-detail', 'item-style',
     'note', 'todo-text', 'aside-content', 'packing-text',
@@ -1845,7 +1972,39 @@
     });
   }
 
-  // ─── Delete handler ───────────────────────────────
+  function injectScaffolding() {
+    document.querySelectorAll('.item-body').forEach(body => {
+      if (!body.querySelector(':scope > .item-style')) {
+        const s = document.createElement('div');
+        s.className = 'item-style';
+        s.setAttribute('contenteditable', 'true');
+        s.setAttribute('data-placeholder', 'Style for the day...');
+        body.appendChild(s);
+      }
+    });
+    const deleteables = '.item, .note, .todo-item, .packing-item';
+    document.querySelectorAll(deleteables).forEach(el => {
+      if (el.querySelector(':scope > .delete-btn')) return;
+      el.insertAdjacentHTML('beforeend',
+        '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>');
+    });
+    document.querySelectorAll('.schedule').forEach(sched => {
+      if (sched.querySelector(':scope > .add-btn')) return;
+      sched.insertAdjacentHTML('beforeend',
+        '<button class="add-btn" onclick="addScheduleItem(this)">+ Add item to day</button>');
+    });
+    const todoList = document.querySelector('.todo');
+    if (todoList && !todoList.parentElement.querySelector(':scope > .add-todo')) {
+      todoList.insertAdjacentHTML('afterend',
+        '<button class="add-btn add-todo" onclick="addTodoItem()">+ Add task</button>');
+    }
+    const packingList = document.querySelector('.packing-list');
+    if (packingList && !packingList.parentElement.querySelector(':scope > .add-packing')) {
+      packingList.insertAdjacentHTML('afterend',
+        '<button class="add-btn add-packing" onclick="addPackingItem()">+ Add packing item</button>');
+    }
+  }
+
   function deleteItem(event, btn) {
     event.stopPropagation();
     const target = btn.parentElement;
@@ -1859,7 +2018,6 @@
     else if (inPacking) savePackingList();
   }
 
-  // ─── Add: schedule item ───────────────────────────
   function addScheduleItem(btn) {
     const schedule = btn.parentElement;
     const item = document.createElement('div');
@@ -1879,7 +2037,6 @@
     setTimeout(() => { titleEl.focus(); selectAll(titleEl); }, 50);
   }
 
-  // ─── Add: todo item ───────────────────────────────
   function addTodoItem() {
     const list = document.querySelector('.todo');
     const item = document.createElement('div');
@@ -1896,7 +2053,6 @@
     setTimeout(() => { text.focus(); selectAll(text); }, 50);
   }
 
-  // ─── Add: packing item ────────────────────────────
   function addPackingItem() {
     const list = document.querySelector('.packing-list');
     const item = document.createElement('div');
@@ -1912,7 +2068,6 @@
     setTimeout(() => { text.focus(); selectAll(text); }, 50);
   }
 
-  // ─── Toggle handlers (also called from inline onclick) ────
   function toggleTodo(event, item) {
     if (event.target.classList.contains('todo-text') ||
         event.target.closest('[contenteditable="true"]') ||
@@ -1926,7 +2081,6 @@
     savePackingList();
   }
 
-  // ─── Select all in a contenteditable ──────────────
   function selectAll(el) {
     const range = document.createRange();
     range.selectNodeContents(el);
@@ -1935,7 +2089,6 @@
     sel.addRange(range);
   }
 
-  // ─── URL linkify ──────────────────────────────────
   function linkifyUrls(el) {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
     const textNodes = [];
@@ -1965,7 +2118,6 @@
     });
   }
 
-  // ─── Add link button ──────────────────────────────
   function addLinkTo(btn) {
     const block = btn.closest('.aside-block');
     const content = block.querySelector('.aside-content');
@@ -1986,24 +2138,7 @@
     saveScope(content);
   }
 
-  // ─── Day toggle ───────────────────────────────────
-  function toggleDay(headEl) {
-    const day = headEl.parentElement;
-    day.classList.toggle('open');
-    const store = loadStore();
-    store.daysOpen = store.daysOpen || {};
-    store.daysOpen[day.dataset.date] = day.classList.contains('open');
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  }
-
-  // ─── Reset everything ─────────────────────────────
-  function resetAllEdits() {
-    if (!confirm('Reset everything — edits, deletions, checked items, packing list, notes. The original itinerary reloads. This cannot be undone.')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
-  }
-
-  // ─── Countdown ────────────────────────────────────
+  // ─── Countdown & current-day ──────────────────────
   function updateCountdown() {
     const tripStart = new Date('2026-06-06T00:00:00');
     const today = new Date();
@@ -2016,8 +2151,6 @@
     else if (days >= -7) el.innerHTML = '<em>On Trip</em>';
     else el.innerHTML = '<em>Done</em>';
   }
-
-  // ─── Auto-expand today's day during trip ──────────
   function highlightCurrentDay() {
     const today = new Date().toISOString().slice(0,10);
     document.querySelectorAll('.day').forEach(d => {
@@ -2028,12 +2161,125 @@
     });
   }
 
-  // ─── Boot ─────────────────────────────────────────
-  restoreContent();      // 1. Restore saved HTML into containers
-  injectScaffolding();   // 2. Inject style fields, delete & add buttons
-  bindEditables();       // 3. Make text editable & bind save handlers
-  updateCountdown();
-  highlightCurrentDay();
+  // ─── One-time migrate localStorage → Firebase ─────
+  async function migrateLocalIfNeeded() {
+    try {
+      const localData = localStorage.getItem('toronto-2026-trip-v3');
+      if (!localData) return;
+      const parsed = JSON.parse(localData);
+      const snap = await TRIP_ROOT.once('value');
+      if (snap.exists()) return; // Firebase already has data
+      const updates = {};
+      if (parsed.dayBodies) {
+        Object.keys(parsed.dayBodies).forEach(date => {
+          updates['dayBodies/' + date] = parsed.dayBodies[date];
+        });
+      }
+      if (parsed.todoList) updates['todoList'] = parsed.todoList;
+      if (parsed.packingList) updates['packingList'] = parsed.packingList;
+      if (parsed.daysOpen) {
+        Object.keys(parsed.daysOpen).forEach(date => {
+          updates['daysOpen/' + date] = parsed.daysOpen[date];
+        });
+      }
+      if (Object.keys(updates).length > 0) {
+        await TRIP_ROOT.update(updates);
+        console.log('Migrated localStorage data to Firebase');
+      }
+    } catch (e) {
+      console.error('Migration error:', e);
+    }
+  }
+
+  // ─── Initial hydrate from Firebase ────────────────
+  async function hydrateFromFirebase() {
+    setSyncStatus('syncing', 'Loading');
+    try {
+      const snap = await TRIP_ROOT.once('value');
+      const data = snap.val() || {};
+      applyingRemote = true;
+      if (data.dayBodies) {
+        Object.keys(data.dayBodies).forEach(date => {
+          const day = document.querySelector('.day[data-date="' + date + '"]');
+          if (day) {
+            const body = day.querySelector('.day-body-inner');
+            if (body) {
+              body.innerHTML = data.dayBodies[date];
+              lastWrittenHash['day-' + date] = hashStr(data.dayBodies[date]);
+            }
+          }
+        });
+      }
+      if (data.todoList) {
+        const list = document.querySelector('.todo');
+        if (list) {
+          list.innerHTML = data.todoList;
+          lastWrittenHash['todoList'] = hashStr(data.todoList);
+        }
+      }
+      if (data.packingList) {
+        const list = document.querySelector('.packing-list');
+        if (list) {
+          list.innerHTML = data.packingList;
+          lastWrittenHash['packingList'] = hashStr(data.packingList);
+        }
+      }
+      if (data.daysOpen) {
+        Object.keys(data.daysOpen).forEach(date => {
+          const day = document.querySelector('.day[data-date="' + date + '"]');
+          if (day && data.daysOpen[date]) day.classList.add('open');
+        });
+      }
+      applyingRemote = false;
+      injectScaffolding();
+      bindEditables();
+    } catch (e) {
+      console.error('Hydrate error:', e);
+      setSyncStatus('offline', 'Offline');
+      injectScaffolding();
+      bindEditables();
+    }
+  }
+
+  // ─── Real-time listeners ──────────────────────────
+  function setupListeners() {
+    TRIP_ROOT.child('dayBodies').on('child_added', (snap) => {
+      applyRemoteDay(snap.key, snap.val());
+    });
+    TRIP_ROOT.child('dayBodies').on('child_changed', (snap) => {
+      applyRemoteDay(snap.key, snap.val());
+    });
+    TRIP_ROOT.child('todoList').on('value', (snap) => {
+      if (snap.exists()) applyRemoteTodo(snap.val());
+    });
+    TRIP_ROOT.child('packingList').on('value', (snap) => {
+      if (snap.exists()) applyRemotePacking(snap.val());
+    });
+    TRIP_ROOT.child('daysOpen').on('child_changed', (snap) => {
+      const day = document.querySelector('.day[data-date="' + snap.key + '"]');
+      if (!day) return;
+      applyingRemote = true;
+      if (snap.val()) day.classList.add('open');
+      else day.classList.remove('open');
+      applyingRemote = false;
+    });
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        if (pendingSaves === 0) setSyncStatus('synced', 'Live');
+      } else {
+        setSyncStatus('offline', 'Offline');
+      }
+    });
+  }
+
+  // ─── Boot ──────────────────────────────────────────
+  (async function boot() {
+    await migrateLocalIfNeeded();
+    await hydrateFromFirebase();
+    setupListeners();
+    updateCountdown();
+    highlightCurrentDay();
+  })();
 </script>
 
 </body>
