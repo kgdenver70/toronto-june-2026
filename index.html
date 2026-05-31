@@ -1949,12 +1949,22 @@
     'person-name', 'person-role', 'day-title', 'day-summary'
   ];
 
+  // Track bound elements via WeakSet (element identity), NOT via a DOM attribute.
+  // Saving innerHTML to Firebase serializes data-attributes — if we tracked bindings
+  // via data-bound, reloaded elements would FALSELY appear already-bound, and never
+  // get listeners attached. Result: silent save failures. WeakSet fixes this because
+  // it keys on element identity; new DOM elements from hydrate are never in the set.
+  const boundElements = new WeakSet();
+
   function bindEditables(root) {
     root = root || document;
     EDITABLE_CLASSES.forEach(cls => {
       root.querySelectorAll('.' + cls).forEach(el => {
-        if (el.dataset.bound === 'true') return;
-        el.dataset.bound = 'true';
+        if (boundElements.has(el)) return;
+        boundElements.add(el);
+        // Remove any stale data-bound attribute from old saved HTML so the
+        // Firebase data eventually cleans itself as you make new edits.
+        if (el.hasAttribute('data-bound')) el.removeAttribute('data-bound');
         if (!el.hasAttribute('contenteditable')) {
           el.setAttribute('contenteditable', 'true');
         }
