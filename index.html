@@ -644,6 +644,174 @@
     color: var(--brass);
   }
 
+  /* ───── ITEM STYLE (per-item style note) ───── */
+  .item-style {
+    margin-top: 10px;
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--sage);
+    line-height: 1.5;
+    outline: none;
+    padding: 4px 0;
+    min-height: 24px;
+    cursor: text;
+    border-radius: 3px;
+    transition: background 0.15s ease;
+  }
+  .item-style:empty::before {
+    content: '✦  ' attr(data-placeholder);
+    color: var(--dim);
+    font-weight: 300;
+    pointer-events: none;
+  }
+  .item-style:not(:empty)::before {
+    content: '✦  ';
+    color: var(--brass);
+    font-style: normal;
+    font-weight: 600;
+  }
+  .item-style:hover { background: rgba(138, 161, 122, 0.05); }
+  .item-style:focus { background: rgba(138, 161, 122, 0.08); }
+
+  /* ───── DELETE BUTTON ───── */
+  .item, .note, .todo-item, .packing-item {
+    position: relative;
+  }
+  .item, .todo-item, .packing-item, .note {
+    padding-right: 28px;
+  }
+  .delete-btn {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--dim);
+    font-size: 20px;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+    border-radius: 50%;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+  }
+  .item:hover > .delete-btn,
+  .note:hover > .delete-btn,
+  .todo-item:hover > .delete-btn,
+  .packing-item:hover > .delete-btn { opacity: 1; }
+  .delete-btn:hover {
+    color: var(--rose);
+    background: rgba(201, 122, 94, 0.12);
+  }
+  .item .delete-btn { top: 16px; transform: none; }
+  .note .delete-btn { top: 12px; transform: none; }
+
+  /* ───── ADD BUTTON ───── */
+  .add-btn {
+    background: transparent;
+    border: 1px dashed var(--line-hi);
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 14px;
+    width: 100%;
+    text-align: center;
+  }
+  .add-btn:hover {
+    border-color: var(--brass);
+    border-style: solid;
+    color: var(--brass);
+    background: rgba(212, 166, 87, 0.04);
+  }
+
+  /* ───── ASIDE 3-COL OVERRIDE ───── */
+  .day-aside { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* ───── PACKING ───── */
+  .packing-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .packing-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 32px 13px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+  .packing-item:hover { border-color: var(--line-hi); }
+  .packing-check {
+    width: 17px;
+    height: 17px;
+    border: 1.5px solid var(--line-hi);
+    border-radius: 4px;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .packing-check:hover { border-color: var(--sage); }
+  .packing-item.packed .packing-check {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+  .packing-item.packed .packing-check::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .packing-text {
+    font-size: 14px;
+    line-height: 1.4;
+    outline: none;
+    flex: 1;
+    cursor: text;
+    border-radius: 3px;
+    transition: background 0.15s ease;
+    padding: 2px 4px;
+    margin: -2px -4px;
+  }
+  .packing-text:hover { background: rgba(212, 166, 87, 0.06); }
+  .packing-text:focus { background: rgba(212, 166, 87, 0.10); }
+  .packing-item.packed .packing-text {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .packing-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass);
+    padding: 3px 8px;
+    border: 1px solid rgba(212, 166, 87, 0.3);
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+
   /* ───── EDITABLE ───── */
   [contenteditable="true"] {
     outline: none;
@@ -753,6 +921,7 @@
     .pick { grid-template-columns: 1fr; }
     .pick-rating { justify-self: start; }
     .day-aside { grid-template-columns: 1fr; }
+    .packing-list { grid-template-columns: 1fr; }
     section { padding: 50px 0 20px; }
   }
 </style>
@@ -929,6 +1098,10 @@
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
@@ -977,6 +1150,10 @@
             <div class="aside-block">
               <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
@@ -1051,6 +1228,10 @@
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
@@ -1106,6 +1287,10 @@
             <div class="aside-block">
               <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
@@ -1173,6 +1358,10 @@
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
@@ -1230,6 +1419,10 @@
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
@@ -1272,6 +1465,10 @@
             <div class="aside-block">
               <div class="aside-label"><span>Dining</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
@@ -1331,6 +1528,10 @@
               <div class="aside-content" data-placeholder="Where you're eating · breakfast, lunch, dinner..." contenteditable="true"></div>
             </div>
             <div class="aside-block">
+              <div class="aside-label"><span>Daypack</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
+              <div class="aside-content" data-placeholder="What to bring out today..." contenteditable="true"></div>
+            </div>
+            <div class="aside-block">
               <div class="aside-label"><span>Notes</span><button class="add-link-btn" onclick="addLinkTo(this)">+ link</button></div>
               <div class="aside-content" data-placeholder="Anything you want to remember..." contenteditable="true"></div>
             </div>
@@ -1347,50 +1548,134 @@
     <p class="section-meta">Tap to mark done</p>
 
     <div class="todo">
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Villanelle tickets · Tue Jun 9 · The Garrison
+        <div class="todo-text" contenteditable="true">Villanelle tickets · Tue Jun 9 · The Garrison
           <span class="todo-priority">High priority</span>
         </div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Toronto → Hamilton transport · Wed Jun 10 (GO Transit, Uber, or rebook a car)
+        <div class="todo-text" contenteditable="true">Toronto → Hamilton transport · Wed Jun 10 (GO Transit, Uber, or rebook a car)
           <span class="todo-priority">High priority</span>
         </div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Hamilton → Kursat's transport · Thu Jun 11 (coordinate with Kursat)</div>
+        <div class="todo-text" contenteditable="true">Hamilton → Kursat's transport · Thu Jun 11 (coordinate with Kursat)</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Kursat's → YYZ transport · Sat Jun 13 (Kursat or Uber)</div>
+        <div class="todo-text" contenteditable="true">Kursat's → YYZ transport · Sat Jun 13 (Kursat or Uber)</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Sat Jun 6 dinner reservation · Yorkville</div>
+        <div class="todo-text" contenteditable="true">Sat Jun 6 dinner reservation · Yorkville</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Sun Jun 7 dinner with Tris · confirm spot</div>
+        <div class="todo-text" contenteditable="true">Sun Jun 7 dinner with Tris · confirm spot</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Tue Jun 9 pre-show dinner · Dundas West</div>
+        <div class="todo-text" contenteditable="true">Tue Jun 9 pre-show dinner · Dundas West</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Wed Jun 10 birthday dinner · Hamilton (book ahead)</div>
+        <div class="todo-text" contenteditable="true">Wed Jun 10 birthday dinner · Hamilton (book ahead)</div>
       </div>
-      <div class="todo-item" onclick="this.classList.toggle('done')">
+      <div class="todo-item" onclick="toggleTodo(event, this)">
         <div class="todo-check"></div>
-        <div class="todo-text">Confirm pickup vs Uber for Feiz at YYZ Tue 4 PM</div>
+        <div class="todo-text" contenteditable="true">Confirm pickup vs Uber for Feiz at YYZ Tue 4 PM</div>
       </div>
     </div>
 
     <div style="text-align:center;">
       <button class="reset-edits" onclick="resetAllEdits()">↺ &nbsp;Reset all edits on this device</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ TRIP PACKING ═══════════ -->
+  <section>
+    <h2 class="section-title">Trip <em>Packing</em></h2>
+    <p class="section-meta">Tap check to mark packed · tap text to edit</p>
+
+    <div class="packing-list">
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Passport (Canada — non-expired)</div>
+        <div class="packing-tag">Critical</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Wallet · cards · CAD if you have it</div>
+        <div class="packing-tag">Critical</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Phone + charger</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Laptop + charger</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Headphones</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Toiletries dopp kit</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Birthday gift for Feiz</div>
+        <div class="packing-tag">Don't forget</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Host gifts (Kursat, anything for Mom)</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Light jacket (Toronto June, 18-25°C, rain possible)</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Umbrella / packable rain shell</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Walking shoes (you'll do real mileage)</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Going-out shoes (Yorkville dinners, Villanelle)</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Smart-casual fits · 2 dinner outfits</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Concert outfit (indie venue · Villanelle)</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Casual fits · 5+ days</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Underwear / socks · 8 days</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Sunglasses</div>
+      </div>
+      <div class="packing-item">
+        <div class="packing-check" onclick="togglePacked(this)"></div>
+        <div class="packing-text" contenteditable="true">Meds / supplements</div>
+      </div>
     </div>
   </section>
 
@@ -1403,15 +1688,12 @@
 <div class="save-toast" id="saveToast">Saved</div>
 
 <script>
-  const STORAGE_KEY = 'toronto-2026-trip';
+  const STORAGE_KEY = 'toronto-2026-trip-v3';
 
-  // ─── Storage helpers ──────────────────────────────
+  // ─── Storage ──────────────────────────────────────
   function loadStore() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    } catch(e) {
-      return {};
-    }
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch(e) { return {}; }
   }
   function saveStore(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1425,31 +1707,242 @@
     t.textContent = msg || 'Saved';
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
   }
 
-  // ─── Make stuff editable ──────────────────────────
-  // Selectors of elements that should be editable, with stable id prefixes.
-  const EDITABLE_SELECTORS = [
-    { sel: '.item-time',    prefix: 'time' },
-    { sel: '.item-title',   prefix: 'title' },
-    { sel: '.item-detail',  prefix: 'detail' },
-    { sel: '.note',         prefix: 'note' },
-    { sel: '.todo-text',    prefix: 'todo' },
-    { sel: '.aside-content', prefix: 'aside' },
+  // ─── Save scopes ──────────────────────────────────
+  function saveDay(dayEl) {
+    const date = dayEl.dataset.date;
+    const body = dayEl.querySelector('.day-body-inner');
+    if (!body) return;
+    const store = loadStore();
+    store.dayBodies = store.dayBodies || {};
+    store.dayBodies[date] = body.innerHTML;
+    saveStore(store);
+  }
+  function saveTodoList() {
+    const list = document.querySelector('.todo');
+    if (!list) return;
+    const store = loadStore();
+    store.todoList = list.innerHTML;
+    saveStore(store);
+  }
+  function savePackingList() {
+    const list = document.querySelector('.packing-list');
+    if (!list) return;
+    const store = loadStore();
+    store.packingList = list.innerHTML;
+    saveStore(store);
+  }
+  function saveScope(el) {
+    const day = el.closest('.day');
+    if (day) return saveDay(day);
+    if (el.closest('.todo')) return saveTodoList();
+    if (el.closest('.packing-list')) return savePackingList();
+  }
+
+  // ─── Restore content from storage ─────────────────
+  function restoreContent() {
+    const store = loadStore();
+    if (store.dayBodies) {
+      Object.keys(store.dayBodies).forEach(date => {
+        const day = document.querySelector('.day[data-date="' + date + '"]');
+        if (day) {
+          const body = day.querySelector('.day-body-inner');
+          if (body) body.innerHTML = store.dayBodies[date];
+        }
+      });
+    }
+    if (store.todoList) {
+      const list = document.querySelector('.todo');
+      if (list) list.innerHTML = store.todoList;
+    }
+    if (store.packingList) {
+      const list = document.querySelector('.packing-list');
+      if (list) list.innerHTML = store.packingList;
+    }
+    if (store.daysOpen) {
+      Object.keys(store.daysOpen).forEach(date => {
+        const day = document.querySelector('.day[data-date="' + date + '"]');
+        if (day && store.daysOpen[date]) day.classList.add('open');
+      });
+    }
+  }
+
+  // ─── Scaffolding: inject item-style, delete btns, add btns ────
+  function injectScaffolding() {
+    // 1. Item-style field on every item-body
+    document.querySelectorAll('.item-body').forEach(body => {
+      if (!body.querySelector(':scope > .item-style')) {
+        const s = document.createElement('div');
+        s.className = 'item-style';
+        s.setAttribute('contenteditable', 'true');
+        s.setAttribute('data-placeholder', 'Style for the day...');
+        body.appendChild(s);
+      }
+    });
+
+    // 2. Delete buttons on items, notes, todo-items, packing-items
+    const deleteables = '.item, .note, .todo-item, .packing-item';
+    document.querySelectorAll(deleteables).forEach(el => {
+      if (el.querySelector(':scope > .delete-btn')) return;
+      el.insertAdjacentHTML('beforeend',
+        '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>');
+    });
+
+    // 3. Add-item buttons at end of each schedule
+    document.querySelectorAll('.schedule').forEach(sched => {
+      if (sched.querySelector(':scope > .add-btn')) return;
+      sched.insertAdjacentHTML('beforeend',
+        '<button class="add-btn" onclick="addScheduleItem(this)">+ Add item to day</button>');
+    });
+
+    // 4. Add-task button after todo list
+    const todoList = document.querySelector('.todo');
+    if (todoList && !todoList.parentElement.querySelector(':scope > .add-todo')) {
+      todoList.insertAdjacentHTML('afterend',
+        '<button class="add-btn add-todo" onclick="addTodoItem()">+ Add task</button>');
+    }
+
+    // 5. Add-packing button after packing list
+    const packingList = document.querySelector('.packing-list');
+    if (packingList && !packingList.parentElement.querySelector(':scope > .add-packing')) {
+      packingList.insertAdjacentHTML('afterend',
+        '<button class="add-btn add-packing" onclick="addPackingItem()">+ Add packing item</button>');
+    }
+  }
+
+  // ─── Bind editable handlers ───────────────────────
+  const EDITABLE_CLASSES = [
+    'item-time', 'item-title', 'item-detail', 'item-style',
+    'note', 'todo-text', 'aside-content', 'packing-text',
+    'title', 'subtitle', 'airport', 'flight-conf', 'flight-num',
+    'person-name', 'person-role', 'day-title', 'day-summary'
   ];
 
-  // ─── URL auto-linkify ─────────────────────────────
+  function bindEditables(root) {
+    root = root || document;
+    EDITABLE_CLASSES.forEach(cls => {
+      root.querySelectorAll('.' + cls).forEach(el => {
+        if (el.dataset.bound === 'true') return;
+        el.dataset.bound = 'true';
+        if (!el.hasAttribute('contenteditable')) {
+          el.setAttribute('contenteditable', 'true');
+        }
+        el.addEventListener('blur', () => {
+          if (el.classList.contains('aside-content')) linkifyUrls(el);
+          saveScope(el);
+        });
+        el.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            el.blur();
+          }
+          e.stopPropagation();
+        });
+        el.addEventListener('click', (e) => e.stopPropagation());
+      });
+    });
+  }
+
+  // ─── Delete handler ───────────────────────────────
+  function deleteItem(event, btn) {
+    event.stopPropagation();
+    const target = btn.parentElement;
+    if (!target) return;
+    const day = target.closest('.day');
+    const inTodo = target.closest('.todo');
+    const inPacking = target.closest('.packing-list');
+    target.remove();
+    if (day) saveDay(day);
+    else if (inTodo) saveTodoList();
+    else if (inPacking) savePackingList();
+  }
+
+  // ─── Add: schedule item ───────────────────────────
+  function addScheduleItem(btn) {
+    const schedule = btn.parentElement;
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.innerHTML =
+      '<div class="item-time">—</div>' +
+      '<div class="item-body">' +
+        '<div class="item-title">New item</div>' +
+        '<div class="item-detail">Tap to add details...</div>' +
+        '<div class="item-style" data-placeholder="Style for the day..."></div>' +
+      '</div>' +
+      '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>';
+    schedule.insertBefore(item, btn);
+    bindEditables(item);
+    saveDay(schedule.closest('.day'));
+    const titleEl = item.querySelector('.item-title');
+    setTimeout(() => { titleEl.focus(); selectAll(titleEl); }, 50);
+  }
+
+  // ─── Add: todo item ───────────────────────────────
+  function addTodoItem() {
+    const list = document.querySelector('.todo');
+    const item = document.createElement('div');
+    item.className = 'todo-item';
+    item.setAttribute('onclick', 'toggleTodo(event, this)');
+    item.innerHTML =
+      '<div class="todo-check"></div>' +
+      '<div class="todo-text">New task</div>' +
+      '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>';
+    list.appendChild(item);
+    bindEditables(item);
+    saveTodoList();
+    const text = item.querySelector('.todo-text');
+    setTimeout(() => { text.focus(); selectAll(text); }, 50);
+  }
+
+  // ─── Add: packing item ────────────────────────────
+  function addPackingItem() {
+    const list = document.querySelector('.packing-list');
+    const item = document.createElement('div');
+    item.className = 'packing-item';
+    item.innerHTML =
+      '<div class="packing-check" onclick="togglePacked(this)"></div>' +
+      '<div class="packing-text">New item</div>' +
+      '<button class="delete-btn" onclick="deleteItem(event, this)" title="Delete">×</button>';
+    list.appendChild(item);
+    bindEditables(item);
+    savePackingList();
+    const text = item.querySelector('.packing-text');
+    setTimeout(() => { text.focus(); selectAll(text); }, 50);
+  }
+
+  // ─── Toggle handlers (also called from inline onclick) ────
+  function toggleTodo(event, item) {
+    if (event.target.classList.contains('todo-text') ||
+        event.target.closest('[contenteditable="true"]') ||
+        event.target.classList.contains('delete-btn')) return;
+    item.classList.toggle('done');
+    saveTodoList();
+  }
+  function togglePacked(checkEl) {
+    const item = checkEl.parentElement;
+    item.classList.toggle('packed');
+    savePackingList();
+  }
+
+  // ─── Select all in a contenteditable ──────────────
+  function selectAll(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  // ─── URL linkify ──────────────────────────────────
   function linkifyUrls(el) {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
     const textNodes = [];
     let n;
     while (n = walker.nextNode()) {
-      // Skip if already inside an anchor
       if (n.parentElement && n.parentElement.closest('a')) continue;
-      if (/(https?:\/\/|www\.)\S+/i.test(n.textContent)) {
-        textNodes.push(n);
-      }
+      if (/(https?:\/\/|www\.)\S+/i.test(n.textContent)) textNodes.push(n);
     }
     textNodes.forEach(textNode => {
       const text = textNode.textContent;
@@ -1472,123 +1965,28 @@
     });
   }
 
-  // ─── Add link button handler ──────────────────────
+  // ─── Add link button ──────────────────────────────
   function addLinkTo(btn) {
     const block = btn.closest('.aside-block');
     const content = block.querySelector('.aside-content');
     const url = prompt('Paste the URL');
     if (!url) return;
     const label = prompt('Link text (what to show)', url) || url;
-
     const a = document.createElement('a');
     a.href = url.startsWith('http') ? url : 'https://' + url;
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = label;
-
     content.focus();
-    // If there's content already, add a leading separator
     if (content.textContent.trim().length > 0) {
       content.appendChild(document.createTextNode(' · '));
     }
     content.appendChild(a);
     content.appendChild(document.createTextNode(' '));
-
-    // Trigger save
-    const id = content.dataset.editId;
-    if (id) {
-      const store = loadStore();
-      store.edits = store.edits || {};
-      store.edits[id] = content.innerHTML;
-      content.dataset.edited = 'true';
-      saveStore(store);
-    }
+    saveScope(content);
   }
 
-  function initEditable() {
-    const store = loadStore();
-    const edits = store.edits || {};
-
-    EDITABLE_SELECTORS.forEach(({sel, prefix}) => {
-      document.querySelectorAll(sel).forEach((el, i) => {
-        const id = prefix + '-' + i;
-        el.dataset.editId = id;
-        el.setAttribute('contenteditable', 'true');
-        el.setAttribute('spellcheck', 'true');
-
-        // Restore saved edit
-        if (edits[id] !== undefined) {
-          el.innerHTML = edits[id];
-          el.dataset.edited = 'true';
-        }
-
-        // Save on blur
-        el.addEventListener('blur', () => {
-          // Auto-linkify URLs in aside content
-          if (el.classList.contains('aside-content')) {
-            linkifyUrls(el);
-          }
-          const store = loadStore();
-          store.edits = store.edits || {};
-          store.edits[id] = el.innerHTML;
-          el.dataset.edited = 'true';
-          saveStore(store);
-        });
-
-        // Cmd/Ctrl+Enter to blur (commit)
-        el.addEventListener('keydown', (e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-            e.preventDefault();
-            el.blur();
-          }
-          // Prevent click-to-toggle on day-head when editing inside a day
-          e.stopPropagation();
-        });
-
-        // Stop click propagation so editing doesn't toggle parent day
-        el.addEventListener('click', (e) => e.stopPropagation());
-      });
-    });
-  }
-
-  // ─── Checklist persistence ────────────────────────
-  function initChecklist() {
-    const store = loadStore();
-    const todos = store.todos || {};
-
-    document.querySelectorAll('.todo-item').forEach((el, i) => {
-      const id = 'check-' + i;
-      el.dataset.todoId = id;
-
-      // Restore state
-      if (todos[id]) el.classList.add('done');
-
-      // Replace inline onclick so we control save behavior
-      el.onclick = (e) => {
-        // Don't toggle if user clicked into the editable text
-        if (e.target.classList.contains('todo-text') ||
-            e.target.closest('[contenteditable="true"]')) return;
-        el.classList.toggle('done');
-        const store = loadStore();
-        store.todos = store.todos || {};
-        store.todos[id] = el.classList.contains('done');
-        saveStore(store);
-      };
-    });
-  }
-
-  // ─── Day open/close persistence ───────────────────
-  function initDays() {
-    const store = loadStore();
-    const opened = store.daysOpen || {};
-
-    document.querySelectorAll('.day').forEach(day => {
-      const date = day.dataset.date;
-      if (opened[date]) day.classList.add('open');
-    });
-  }
-
-  // Override toggleDay so it persists
+  // ─── Day toggle ───────────────────────────────────
   function toggleDay(headEl) {
     const day = headEl.parentElement;
     day.classList.toggle('open');
@@ -1598,9 +1996,9 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   }
 
-  // ─── Reset ────────────────────────────────────────
+  // ─── Reset everything ─────────────────────────────
   function resetAllEdits() {
-    if (!confirm('Reset all your edits, checked items, and notes on this device? The original itinerary will reload.')) return;
+    if (!confirm('Reset everything — edits, deletions, checked items, packing list, notes. The original itinerary reloads. This cannot be undone.')) return;
     localStorage.removeItem(STORAGE_KEY);
     location.reload();
   }
@@ -1613,18 +2011,13 @@
     const days = Math.ceil((tripStart - today) / (1000 * 60 * 60 * 24));
     const el = document.getElementById('countdown');
     if (!el) return;
-    if (days > 0) {
-      el.innerHTML = days;
-    } else if (days === 0) {
-      el.innerHTML = '<em>Today</em>';
-    } else if (days >= -7) {
-      el.innerHTML = '<em>On Trip</em>';
-    } else {
-      el.innerHTML = '<em>Done</em>';
-    }
+    if (days > 0) el.innerHTML = days;
+    else if (days === 0) el.innerHTML = '<em>Today</em>';
+    else if (days >= -7) el.innerHTML = '<em>On Trip</em>';
+    else el.innerHTML = '<em>Done</em>';
   }
 
-  // ─── Auto-jump to current day during trip ─────────
+  // ─── Auto-expand today's day during trip ──────────
   function highlightCurrentDay() {
     const today = new Date().toISOString().slice(0,10);
     document.querySelectorAll('.day').forEach(d => {
@@ -1636,9 +2029,9 @@
   }
 
   // ─── Boot ─────────────────────────────────────────
-  initEditable();
-  initChecklist();
-  initDays();
+  restoreContent();      // 1. Restore saved HTML into containers
+  injectScaffolding();   // 2. Inject style fields, delete & add buttons
+  bindEditables();       // 3. Make text editable & bind save handlers
   updateCountdown();
   highlightCurrentDay();
 </script>
